@@ -1,0 +1,32 @@
+version: '3.5'
+services:
+    db:
+        image: mysql:latest
+        #restart: always
+        environment:
+            MYSQL_DATABASE: 'creflix_db'
+            MYSQL_USER: 'creflixadm'
+            MYSQL_PASSWORD: 'creflix123'
+            MYSQL_ROOT_PASSWORD: 'root'
+        ports:
+            - '3308:3306'
+        expose:
+            - '3308'
+        volumes:
+            - ./my-db:/var/lib/mysql
+    app:
+        image: phpmyadmin/phpmyadmin:latest
+        links:
+            - db
+        ports:
+            - 13306:80
+        environment:
+            PMA_ARBITRARY: 1
+            MYSQL_DATABASE: 'creflix_db'
+            MYSQL_USER: 'creflixadm'
+            MYSQL_PASSWORD: 'creflix123'
+            MYSQL_ROOT_PASSWORD: 'root'
+        volumes:
+            - ./php-make/upload.ini:/usr/local/etc/php/php.ini
+volumes:
+    my-db:
