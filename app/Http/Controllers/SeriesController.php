@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Serie;
+use App\Http\Requests\SeriesFormRequest;
+use App\Models\Episode;
+use App\Models\Season;
+use App\Models\Series;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -10,7 +13,7 @@ class SeriesController extends Controller
 {
     public function index(Request $request)
     {
-        $series = Serie::query()->orderBy('nome')->get();
+        $series = Series::all();
         $mensagemSucesso = $request->session()->get('mensagem.sucesso');
 
         return view('series.index')
@@ -24,15 +27,37 @@ class SeriesController extends Controller
         return view('series.create');
     }
 
-    public function store(Request $request)
+    public function store(SeriesFormRequest $request)
     {
-        $serie = Serie::create($request->all());
+        $serie = Series::create($request->all());
+
+        $seasons = [];
+
+
+        for($i=1; $i <= $request->seasonQty; $i++) {
+            $seasons[] = [
+                'series_id' => $serie->id,
+                'number' => $i
+            ];
+        }
+        Season::insert($seasons);
+
+        $episodes = [];
+        foreach ($serie->season as $season) {
+            for ($j = 1; $j <= $request->episodePerSeason; $j++) {
+                $episodes[] = [
+                    'season_id' => $season->id,
+                    'number' => $j
+                ];
+            }
+        }
+        Episode::insert($episodes);
 
         return to_route('series.index')
             ->with('mensagem.sucesso', "A série '{$serie->nome}' foi cadastrada com sucesso!");
     }
 
-    public function destroy(Serie $series)
+    public function destroy(Series $series)
     {
         $series->delete();
 
@@ -40,12 +65,12 @@ class SeriesController extends Controller
             ->with('mensagem.sucesso', "A série '{$series->nome}' foi removida com sucesso!");
     }
 
-    public function edit(Serie $series)
+    public function edit(Series $series)
     {
         return view('series.edit')->with('serie', $series);
     }
 
-    public function update(Serie $series, Request $request)
+    public function update(Series $series, SeriesFormRequest $request)
     {
         $series->nome = $request->nome;
         $series->save();
